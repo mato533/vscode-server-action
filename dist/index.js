@@ -6489,6 +6489,71 @@ module.exports = function (data, options) {
 
 /***/ }),
 
+/***/ 7968:
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = {
+    /**
+     * True if this is running in Nodejs, will be undefined in a browser.
+     * In a browser, browserify won't include this file and the whole module
+     * will be resolved an empty object.
+     */
+    isNode : typeof Buffer !== "undefined",
+    /**
+     * Create a new nodejs Buffer from an existing content.
+     * @param {Object} data the data to pass to the constructor.
+     * @param {String} encoding the encoding to use.
+     * @return {Buffer} a new Buffer.
+     */
+    newBufferFrom: function(data, encoding) {
+        if (Buffer.from && Buffer.from !== Uint8Array.from) {
+            return Buffer.from(data, encoding);
+        } else {
+            if (typeof data === "number") {
+                // Safeguard for old Node.js versions. On newer versions,
+                // Buffer.from(number) / Buffer(number, encoding) already throw.
+                throw new Error("The \"data\" argument must not be a number");
+            }
+            return new Buffer(data, encoding);
+        }
+    },
+    /**
+     * Create a new nodejs Buffer with the specified size.
+     * @param {Integer} size the size of the buffer.
+     * @return {Buffer} a new Buffer.
+     */
+    allocBuffer: function (size) {
+        if (Buffer.alloc) {
+            return Buffer.alloc(size);
+        } else {
+            var buf = new Buffer(size);
+            buf.fill(0);
+            return buf;
+        }
+    },
+    /**
+     * Find out if an object is a Buffer.
+     * @param {Object} b the object to test.
+     * @return {Boolean} true if the object is a Buffer, false otherwise.
+     */
+    isBuffer : function(b){
+        return Buffer.isBuffer(b);
+    },
+
+    isStream : function (obj) {
+        return obj &&
+            typeof obj.on === "function" &&
+            typeof obj.pause === "function" &&
+            typeof obj.resume === "function";
+    }
+};
+
+
+/***/ }),
+
 /***/ 3581:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -6617,71 +6682,6 @@ NodejsStreamOutputAdapter.prototype._read = function() {
 };
 
 module.exports = NodejsStreamOutputAdapter;
-
-
-/***/ }),
-
-/***/ 7968:
-/***/ ((module) => {
-
-"use strict";
-
-
-module.exports = {
-    /**
-     * True if this is running in Nodejs, will be undefined in a browser.
-     * In a browser, browserify won't include this file and the whole module
-     * will be resolved an empty object.
-     */
-    isNode : typeof Buffer !== "undefined",
-    /**
-     * Create a new nodejs Buffer from an existing content.
-     * @param {Object} data the data to pass to the constructor.
-     * @param {String} encoding the encoding to use.
-     * @return {Buffer} a new Buffer.
-     */
-    newBufferFrom: function(data, encoding) {
-        if (Buffer.from && Buffer.from !== Uint8Array.from) {
-            return Buffer.from(data, encoding);
-        } else {
-            if (typeof data === "number") {
-                // Safeguard for old Node.js versions. On newer versions,
-                // Buffer.from(number) / Buffer(number, encoding) already throw.
-                throw new Error("The \"data\" argument must not be a number");
-            }
-            return new Buffer(data, encoding);
-        }
-    },
-    /**
-     * Create a new nodejs Buffer with the specified size.
-     * @param {Integer} size the size of the buffer.
-     * @return {Buffer} a new Buffer.
-     */
-    allocBuffer: function (size) {
-        if (Buffer.alloc) {
-            return Buffer.alloc(size);
-        } else {
-            var buf = new Buffer(size);
-            buf.fill(0);
-            return buf;
-        }
-    },
-    /**
-     * Find out if an object is a Buffer.
-     * @param {Object} b the object to test.
-     * @return {Boolean} true if the object is a Buffer, false otherwise.
-     */
-    isBuffer : function(b){
-        return Buffer.isBuffer(b);
-    },
-
-    isStream : function (obj) {
-        return obj &&
-            typeof obj.on === "function" &&
-            typeof obj.pause === "function" &&
-            typeof obj.resume === "function";
-    }
-};
 
 
 /***/ }),
@@ -24942,15 +24942,18 @@ const run = async () => {
         : (0,node_os__WEBPACK_IMPORTED_MODULE_1__.platform)() === 'win32'
             ? (0,node_path__WEBPACK_IMPORTED_MODULE_0__.resolve)((0,node_path__WEBPACK_IMPORTED_MODULE_0__.dirname)(electronPath), 'bin', 'code.cmd')
             : (0,node_path__WEBPACK_IMPORTED_MODULE_0__.resolve)((0,node_path__WEBPACK_IMPORTED_MODULE_0__.dirname)(electronPath), 'bin', 'code');
+    const options = (0,node_os__WEBPACK_IMPORTED_MODULE_1__.platform)() === 'win32'
+        ? { shell: true }
+        : {};
     /**
      * name the machine as an individual command so that we don't
      * get prompt when launching the server
      */
     console.log('RUN', codePath, ['tunnel', '--accept-server-license-terms', 'rename', machineId].join(' '));
-    await (0,execa__WEBPACK_IMPORTED_MODULE_2__/* .execa */ .r)(codePath, ['--help']);
+    await (0,execa__WEBPACK_IMPORTED_MODULE_2__/* .execa */ .r)(codePath, ['--help'], options);
     const startServer = await Promise.race([
         new Promise((resolve) => setTimeout(() => resolve(false), timeout)),
-        (0,execa__WEBPACK_IMPORTED_MODULE_2__/* .execa */ .r)(codePath, ['tunnel', '--accept-server-license-terms', 'rename', machineId]).then(() => true)
+        (0,execa__WEBPACK_IMPORTED_MODULE_2__/* .execa */ .r)(codePath, ['tunnel', '--accept-server-license-terms', 'rename', machineId], options).then(() => true)
     ]);
     console.log(5);
     if (!startServer) {
@@ -24959,7 +24962,8 @@ const run = async () => {
     }
     console.log(6);
     await (0,execa__WEBPACK_IMPORTED_MODULE_2__/* .execa */ .r)(codePath, ['tunnel', '--accept-server-license-terms'], {
-        stdio: [process.stdin, process.stdout, process.stderr]
+        stdio: [process.stdin, process.stdout, process.stderr],
+        ...options,
     });
 };
 /**

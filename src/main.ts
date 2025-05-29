@@ -36,17 +36,22 @@ export const run = async (): Promise<void> => {
       ? resolve(dirname(electronPath), 'bin', 'code.cmd')
       : resolve(dirname(electronPath), 'bin', 'code')
 
+  const options = platform() === 'win32'
+    ?{shell:true}
+    :{}
+
   /**
    * name the machine as an individual command so that we don't
    * get prompt when launching the server
    */
   console.log('RUN', codePath, ['tunnel', '--accept-server-license-terms', 'rename', machineId].join(' '));
-  await execa(codePath, ['--help'])
+  await execa(codePath, ['--help'], options)
   const startServer = await Promise.race([
     new Promise((resolve) => setTimeout(() => resolve(false), timeout)),
     execa(
       codePath,
-      ['tunnel', '--accept-server-license-terms', 'rename', machineId]
+      ['tunnel', '--accept-server-license-terms', 'rename', machineId],
+      options,
     ).then(() => true)
   ])
 
@@ -58,7 +63,8 @@ export const run = async (): Promise<void> => {
 
   console.log(6)
   await execa(codePath, ['tunnel', '--accept-server-license-terms'], {
-    stdio: [process.stdin, process.stdout, process.stderr]
+    stdio: [process.stdin, process.stdout, process.stderr],
+    ...options,
   })
 }
 
